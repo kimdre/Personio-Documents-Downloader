@@ -2,6 +2,7 @@
 
 import re
 import requests
+import datetime
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser, SUPPRESS
 
@@ -55,6 +56,15 @@ def get_arguments():
         default="./",
     )
 
+    optional.add_argument(
+        "-t", "--timerange",
+        dest="timerange",
+        type=int,
+        help="Time range in days from today in which to search for files. Defaults to last 7 days.",
+        metavar="7",
+        default="7",
+    )
+
     return parser.parse_args()
 
 
@@ -77,13 +87,26 @@ def login(url: str, credentials: dict) -> [requests.Session, int]:
         exit("Login failed")
 
 
-def get_latest_file(url: str, session: requests.Session) -> [str, str]:
-    """Return name and url of the latest file found in the user's documents page"""
+def get_latest_files(url: str, session: requests.Session, timerange: int) -> tuple[str, datetime.datetime, str]:
+    """Return name, url and datetime of all files found in the specified timerange in the user's documents page"""
     response = session.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
-    filename = soup.find(class_="employee-docs-preview-link").text.strip()
-    url = soup.find(class_="download-document-link").get("href").strip()
-    return filename, url
+
+    files = []
+    date_format = '%d.%m.%Y'
+    now = datetime.datetime.now()
+
+    for row in soup.find_all('table')[0].tbody.find_all('tr')[1:]:
+        row = row.find_all('td')
+        files.append(
+            {
+                "name": row[1].text.strip(),
+                "date": datetime.datetime.strptime(row[4].text.strip(), date_format),
+                "url": row[5].find(class_="download-document-link").get("href").strip()
+            }
+        )
+
+    return [file for file in files if (now - file["date"]).days <= timerange]
 
 
 def download_file(url: str, path: str, session: requests.Session) -> None:
@@ -98,11 +121,18 @@ def download_file(url: str, path: str, session: requests.Session) -> None:
 
 if __name__ == '__main__':
     args = get_arguments()
-    session, employee_id = login(url=f"{args.personio_url}/login/index",
-                                 credentials={"email": str(args.username), "password": str(args.password)})
+    session, employee_id = login(
+        url=f"{args.personio_url}/login/index",
+        credentials={"email": str(args.username), "password": str(args.password)}
+    )
 
-    filename, url = get_latest_file(url=f"{args.personio_url}/documents/employee-documents/{employee_id}/",
-                                    session=session)
+    files = get_latest_files(
+        url=f"{args.personio_url}/documents/employee-documents/{employee_id}/",
+        session=session,
+        timerange=args.timerange
+    )
 
-    download_file(url=url, path=args.download_path + filename, session=session)
+    for file in files:
+        download_file(path=args.download_path + file["name"], url=file["url"], session=session)
+
     session.close()
