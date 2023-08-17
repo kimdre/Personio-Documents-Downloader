@@ -1,6 +1,6 @@
 # Personio Documents Downloader
 
-Downloads the latest document from Personio of a specific user using the Personio Web UI.
+Downloads the latest documents from Personio of a specific user using the Personio Web UI.
 This script is for normal users, who don't have access to the Personio API.
 
 ## Options

@@ -11,7 +11,7 @@ def get_arguments():
     """Load program arguments"""
     parser = ArgumentParser(
         prog="Personio Documents Downloader",
-        description="Downloads the latest document from Personio of a specific user",
+        description="Downloads the latest documents from Personio of a specific user",
         epilog="For more informations see https://github.com/kimdre/personio-documents-downloader",
         add_help=False
     )
