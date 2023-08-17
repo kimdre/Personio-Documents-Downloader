@@ -13,3 +13,4 @@ This script is for normal users, who don't have access to the Personio API.
 ### Optional arguments:
 - `-h`, `--help`: Show this help message and exit.
 - `-d DOWNLOAD_PATH`, --directory DOWNLOAD_PATH`: Target directory of the downloaded file. Can be absolute or relative. Default is the current directory.
+- `-t`, `-timerange`: Time range in days from today in which to search for files. Defaults to last 7 days.
